@@ -91,7 +91,6 @@ for lib_info in "${libraries[@]}"; do
         "bzip2")
             emmake make -j$(nproc) libbz2.a
             cp libbz2.a "$PREFIX/lib/"
-            cp *.h "$PREFIX/include/"
             ;;
         "xz")
             emconfigure ./configure --prefix="$PREFIX" --disable-shared --enable-static \
@@ -245,6 +244,13 @@ for lib_info in "${libraries[@]}"; do
     cd /work/src-ultimate
     echo -e "${GREEN}✓ $lib_name built successfully${NC}"
 done
+
+# If only precompiling external libraries is requested, stop here
+if [ "${LIBS_ONLY:-0}" = "1" ]; then
+    echo -e "${GREEN}✓ External libraries precompiled into ${PREFIX}${NC}"
+    echo -e "${YELLOW}Stopping before FFmpeg configure as requested (LIBS_ONLY=1).${NC}"
+    exit 0
+fi
 
 echo -e "${YELLOW}🔧 Building Ultimate FFmpeg${NC}"
 
