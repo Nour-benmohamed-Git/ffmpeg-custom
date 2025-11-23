@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FFmpeg WASM ST Tests</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 20px; }
+    pre { background: #f5f5f7; padding: 12px; overflow: auto; }
+    .ok { color: #0a7; }
+    .err { color: #c00; }
+  </style>
+</head>
+<body>
+  <h1>FFmpeg WASM Single-Thread Test</h1>
+  <button id="run">Run Tests</button>
+  <div id="status"></div>
+  <h2>Results</h2>
+  <pre id="out"></pre>
+  <script>
+    const btn = document.getElementById("run");
+    const status = document.getElementById("status");
+    const out = document.getElementById("out");
+    let worker;
+    function log(x){ out.textContent += x + "\n"; }
+    function fmt(r){ return JSON.stringify(r, null, 2); }
+    btn.onclick = () => {
+      out.textContent = "";
+      status.textContent = "Starting...";
+      if (worker) worker.terminate();
+      worker = new Worker("./st-worker.js");
+      worker.onmessage = (ev) => {
+        const data = ev.data || {};
+        if (data.type !== "result") return;
+        status.textContent = data.ok ? "Completed" : "Failed";
+        if (data.error) log("error: " + String(data.error));
+        log("init logs: " + String((data.initLogs||[]).join("\n")));
+        log("init errs: " + String((data.initErrs||[]).join("\n")));
+        log("total ms: " + String(data.totalMs));
+        for (const r of data.results||[]) log(fmt(r));
+      };
+      worker.postMessage({ type: "run" });
+    };
+    window.addEventListener("load", () => btn.click());
+  </script>
+</body>
+</html>
